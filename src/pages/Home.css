@@ -1,0 +1,62 @@
+.home-container {
+  margin: 0px;
+  padding: 0px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  /* top: 0;
+  left: 0; */
+}
+
+.home-container h1 {
+  margin: 0;
+  padding: 0;
+  font-family:
+    "Inter",
+    "SF Pro Display",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 64px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -2px;
+}
+
+.home-container input {
+  margin-top: 20px;
+  height: 7vh;
+  width: 10vw;
+  outline: none;
+  border: 2px solid #1a1a1a;
+  border-radius: 8px;
+  padding: 0px 10px;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.home-container button {
+  background-color: #00c80d;
+  height: 10vh;
+  width: 20vw;
+  margin-top: 20px;
+  outline: none;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 18px;
+  transition: all 0.3s ease;
+}
+.home-container button:hover {
+  background-color: #00a60a;
+  cursor: pointer;
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 200, 13, 0.3);
+}
