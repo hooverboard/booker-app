@@ -7,7 +7,7 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make": "electron-rebuild && electron-forge make",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
@@ -27,16 +27,18 @@
     "@electron-forge/plugin-fuses": "^7.10.2",
     "@electron-forge/plugin-vite": "^7.10.2",
     "@electron/fuses": "^1.8.0",
+    "@electron/rebuild": "^3.7.2",
     "electron": "39.1.2",
+    "electron-rebuild": "^3.2.9",
     "vite": "^5.4.21"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.7.0",
     "electron-squirrel-startup": "^1.0.1",
+    "node-screenshot": "^0.1.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.5",
-    "robotjs": "^0.6.0",
-    "screenshot-desktop": "^1.15.3"
+    "robotjs": "^0.6.0"
   }
 }

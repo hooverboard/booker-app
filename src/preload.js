@@ -10,4 +10,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onCaptureComplete: (callback) => {
     ipcRenderer.on("capture-complete", callback);
   },
+  // minimal additions to support renderer-based fullscreen capture
+  saveFrame: (dataURL) => ipcRenderer.send("save-captured-frame", dataURL),
+  pressSpace: () => ipcRenderer.send("press-space"),
+  completeLoop: (meta) => ipcRenderer.send("capture-loop-complete", meta),
+  getScreenPermissionStatus: () =>
+    ipcRenderer.invoke("screen-permission-status"),
 });
