@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Region Selector</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        cursor: crosshair;
+        background: transparent;
+        -webkit-app-region: no-drag;
+        pointer-events: auto;
+      }
+      .hint {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.6);
+        padding: 10px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        pointer-events: none;
+      }
+      .selection-box {
+        position: fixed;
+        border: 2px solid #00c80d;
+        background: rgba(0, 200, 13, 0.1);
+        pointer-events: none;
+        z-index: 9999;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hint" id="hint">Drag to select region, then release (ESC to cancel)</div>
+    <div class="selection-box" id="selectionBox"></div>
+
+    <script>
+      let dragStart = null;
+      const selectionBox = document.getElementById("selectionBox");
+      const hintEl = document.getElementById("hint");
+
+      document.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        dragStart = {
+          x: e.screenX,
+          y: e.screenY,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        };
+        selectionBox.style.display = "block";
+        selectionBox.style.left = e.clientX + "px";
+        selectionBox.style.top = e.clientY + "px";
+        selectionBox.style.width = "0px";
+        selectionBox.style.height = "0px";
+        if (hintEl) hintEl.textContent = "Dragging… release to confirm (ESC to cancel)";
+        console.log("mousedown", dragStart);
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!dragStart) return;
+        e.preventDefault();
+
+        const left = Math.min(dragStart.clientX, e.clientX);
+        const top = Math.min(dragStart.clientY, e.clientY);
+        const width = Math.abs(e.clientX - dragStart.clientX);
+        const height = Math.abs(e.clientY - dragStart.clientY);
+
+        selectionBox.style.left = left + "px";
+        selectionBox.style.top = top + "px";
+        selectionBox.style.width = width + "px";
+        selectionBox.style.height = height + "px";
+        if (hintEl) hintEl.textContent = `Drag ${width}×${height} (ESC to cancel)`;
+        console.log("mousemove", { left, top, width, height });
+      });
+
+      function finishSelection(e) {
+        if (!dragStart) return;
+        e.preventDefault();
+
+        const x = Math.min(dragStart.x, e.screenX);
+        const y = Math.min(dragStart.y, e.screenY);
+        const width = Math.abs(e.screenX - dragStart.x);
+        const height = Math.abs(e.screenY - dragStart.y);
+
+        if (width < 10 || height < 10) {
+          window.close();
+          return;
+        }
+
+        // Send region back to main process using screen coordinates
+        if (window.electronAPI && window.electronAPI.sendRegion) {
+          window.electronAPI.sendRegion({ x, y, width, height });
+        }
+
+        dragStart = null;
+        console.log("mouseup finish", { x, y, width, height });
+        window.close();
+      }
+
+      document.addEventListener("mouseup", finishSelection);
+      window.addEventListener("mouseup", finishSelection);
+
+      // ESC to cancel
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (window.electronAPI && window.electronAPI.sendRegion) {
+            // Signal cancel to main so all overlays close together
+            window.electronAPI.sendRegion(null);
+          }
+          window.close();
+        }
+      });
+    </script>
+  </body>
+</html>

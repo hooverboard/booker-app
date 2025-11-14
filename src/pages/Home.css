@@ -60,3 +60,32 @@
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(0, 200, 13, 0.3);
 }
+
+.selection-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: crosshair;
+  z-index: 9999;
+}
+
+.selection-hint {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.selection-box {
+  position: absolute;
+  border: 2px solid #00c80d;
+  background: rgba(0, 200, 13, 0.1);
+  pointer-events: none;
+}

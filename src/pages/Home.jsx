@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import React from "react";
 import "./Home.css";
 
@@ -8,10 +8,25 @@ const Home = () => {
 
   //listen for response
   useEffect(() => {
-    window.electronAPI.onCaptureComplete((event, result) => {
+    const handleCaptureComplete = (event, result) => {
       setIsCapturing(false);
       alert(`Captured ${result.count} screenshots`);
+    };
+
+    const handleRegionSelected = (region) => {
+      if (region) {
+        setIsCapturing(true);
+        const num = parseInt(screenshotNum);
+        window.electronAPI.startCaptureWithRegion(num, region);
+      }
+    };
+
+    window.electronAPI.onCaptureComplete(handleCaptureComplete);
+    window.electronAPI.onRegionSelected?.(handleRegionSelected);
+    window.electronAPI.onSelectorError?.((message) => {
+      alert(`Selector failed to open: ${message}`);
     });
+
     // Check macOS screen permission (no extra UI elements, just alert once if missing)
     (async () => {
       const status = await window.electronAPI.getScreenPermissionStatus?.();
@@ -21,17 +36,18 @@ const Home = () => {
         );
       }
     })();
-  }, []);
 
-  // handle start button - legacy main-process capture
+    // Cleanup function is not needed for IPC listeners as they persist
+  }, [screenshotNum]);
+
+  // handle start button - open fullscreen region selector
   const handleStart = () => {
     const num = parseInt(screenshotNum);
     if (isNaN(num) || num < 1) {
       alert("Must enter a valid number");
       return;
     }
-    setIsCapturing(true);
-    window.electronAPI.startCapture(num);
+    window.electronAPI.openRegionSelector?.();
   };
 
   return (
