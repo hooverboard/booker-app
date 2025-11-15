@@ -1,91 +1,188 @@
 .home-container {
-  margin: 0px;
-  padding: 0px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  width: 100vw;
+  justify-content: center;
   height: 100vh;
-  overflow: hidden;
-  position: fixed;
-  /* top: 0;
-  left: 0; */
-}
-
-.home-container h1 {
-  margin: 0;
-  padding: 0;
-  font-family:
-    "Inter",
-    "SF Pro Display",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
+  width: 100vw;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
-  font-size: 64px;
+}
+
+h1 {
+  font-size: 4rem;
   font-weight: 700;
-  color: #1a1a1a;
+  margin-bottom: 2rem;
   letter-spacing: -2px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-.home-container input {
-  margin-top: 20px;
-  height: 7vh;
-  width: 10vw;
-  outline: none;
-  border: 2px solid #1a1a1a;
-  border-radius: 8px;
-  padding: 0px 10px;
-  font-size: 18px;
-  font-weight: bold;
-  text-align: center;
+label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.9;
 }
 
-.home-container button {
-  background-color: #00c80d;
-  height: 10vh;
-  width: 20vw;
-  margin-top: 20px;
-  outline: none;
+input {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  width: 200px;
   border: none;
   border-radius: 8px;
-  color: white;
-  font-size: 18px;
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-.home-container button:hover {
-  background-color: #00a60a;
+
+input:focus {
+  outline: none;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button {
+  padding: 0.875rem 2.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
   cursor: pointer;
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 200, 13, 0.3);
+  border: none;
+  border-radius: 12px;
+  background: #00c853;
+  color: #fff;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 200, 83, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.selection-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  cursor: crosshair;
-  z-index: 9999;
+button:hover:not(:disabled) {
+  background: #00e676;
+  box-shadow: 0 6px 20px rgba(0, 200, 83, 0.5);
+  transform: translateY(-2px);
 }
 
-.selection-hint {
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 200, 83, 0.4);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.open-screenshots-button {
   position: absolute;
   top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: white;
-  font-size: 18px;
-  font-weight: bold;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  left: 20px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #000;
 }
 
-.selection-box {
-  position: absolute;
-  border: 2px solid #00c80d;
-  background: rgba(0, 200, 13, 0.1);
-  pointer-events: none;
+.open-screenshots-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
+
+.convert-to-pdf-button {
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #000;
+}
+
+.convert-to-pdf-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.dark-mode-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #000;
+}
+
+.dark-mode {
+  background-color: #252526;
+}
+
+.dark-mode h1,
+.dark-mode label {
+  color: #fff;
+}
+
+.dark-mode input {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  outline: none;
+  color: #fff;
+}
+
+.dark-mode input:focus {
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode button {
+  border: none;
+  outline: none;
+}
+
+.dark-mode .open-screenshots-button,
+.dark-mode .convert-to-pdf-button,
+.dark-mode .dark-mode-toggle {
+  border: none;
+  outline: none;
+}
+
+.open-output-button {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #000;
+}
+
+.dark-mode .open-output-button {
+  border: none;
+  outline: none;
+}
+

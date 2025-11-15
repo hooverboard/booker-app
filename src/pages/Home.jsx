@@ -5,6 +5,8 @@ import "./Home.css";
 const Home = () => {
   const [screenshotNum, setScreenshotNum] = useState("5");
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   //listen for response
   useEffect(() => {
@@ -21,11 +23,17 @@ const Home = () => {
       }
     };
 
+    const handleConversionComplete = (event, result) => {
+      setIsConverting(false);
+      alert(`PDF saved to ${result.path}`);
+    };
+
     window.electronAPI.onCaptureComplete(handleCaptureComplete);
     window.electronAPI.onRegionSelected?.(handleRegionSelected);
     window.electronAPI.onSelectorError?.((message) => {
       alert(`Selector failed to open: ${message}`);
     });
+    window.electronAPI.onConversionComplete?.(handleConversionComplete);
 
     // Check macOS screen permission (no extra UI elements, just alert once if missing)
     (async () => {
@@ -50,8 +58,39 @@ const Home = () => {
     window.electronAPI.openRegionSelector?.();
   };
 
+  const handleConvertToPdf = () => {
+    setIsConverting(true);
+    window.electronAPI.convertToPdf();
+  };
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
   return (
-    <div className="home-container">
+    <div className={`home-container ${isDarkMode ? "dark-mode" : ""}`}>
+      <button
+        className="open-screenshots-button"
+        onClick={() => window.electronAPI.openScreenshotDirectory()}
+      >
+        Screenshots Folder
+      </button>
+      <button
+        className="convert-to-pdf-button"
+        onClick={handleConvertToPdf}
+        disabled={isConverting}
+      >
+        {isConverting ? "Converting..." : "Convert Screenshots to PDF"}
+      </button>
+      <button className="dark-mode-toggle" onClick={toggleDarkMode}>
+        {isDarkMode ? "Light Mode" : "Dark Mode"}
+      </button>
+      <button
+        className="open-output-button"
+        onClick={() => window.electronAPI.openOutputDirectory()}
+      >
+        Open Output Folder
+      </button>
       <h1>Booker</h1>
 
       <label>Number of screenshots</label>

@@ -37,4 +37,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("screen-permission-status"),
   // selector overlay -> main: send selected region (or null to cancel)
   sendRegion: (region) => ipcRenderer.send("region-selected", region),
+  openScreenshotDirectory: () => {
+    ipcRenderer.send("open-screenshot-directory");
+  },
+  convertToPdf: () => {
+    ipcRenderer.send("convert-to-pdf");
+  },
+  onConversionComplete: (callback) => {
+    ipcRenderer.removeAllListeners("conversion-complete");
+    ipcRenderer.on("conversion-complete", callback);
+  },
+  openOutputDirectory: () => {
+    ipcRenderer.send("open-output-directory");
+  },
 });

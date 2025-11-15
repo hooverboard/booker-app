@@ -5,6 +5,7 @@ import {
   desktopCapturer,
   screen as electronScreen,
   systemPreferences,
+  shell,
 } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
@@ -22,6 +23,7 @@ try {
 import fs from "node:fs";
 import { nativeImage } from "electron";
 import { execFile } from "node:child_process";
+import { PDFDocument } from "pdf-lib";
 
 function pressSpacebar() {
   if (robot) {
@@ -194,7 +196,7 @@ ipcMain.on("open-region-selector", () => {
       win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
       win.setAlwaysOnTop(true, "screen-saver");
       win.setIgnoreMouseEvents(false, { forward: false });
-      
+
       // Load selector HTML inline to avoid packaging issues
       const selectorHTML = `<!DOCTYPE html>
 <html>
@@ -270,8 +272,10 @@ ipcMain.on("open-region-selector", () => {
   </script>
 </body>
 </html>`;
-      
-      win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(selectorHTML)}`);
+
+      win.loadURL(
+        `data:text/html;charset=utf-8,${encodeURIComponent(selectorHTML)}`
+      );
       win.once("ready-to-show", () => {
         win.setOpacity(0.35);
         win.show();
@@ -287,7 +291,10 @@ ipcMain.on("open-region-selector", () => {
   } catch (err) {
     console.error("Failed to open region selector:", err);
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("selector-error", err?.message || String(err));
+      mainWindow.webContents.send(
+        "selector-error",
+        err?.message || String(err)
+      );
     }
   }
 });
@@ -305,8 +312,12 @@ function cleanupSelectorWindows() {
     if (selectorWindows && selectorWindows.length) {
       for (const w of selectorWindows) {
         if (w && !w.isDestroyed()) {
-          try { w.removeAllListeners("closed"); } catch {}
-          try { w.close(); } catch {}
+          try {
+            w.removeAllListeners("closed");
+          } catch {}
+          try {
+            w.close();
+          } catch {}
         }
       }
     }
@@ -517,6 +528,69 @@ ipcMain.on("start-capture-region", async (event, numScreenshots, region) => {
     count: numScreenshots,
     folder: screenshotsDir,
   });
+});
+
+ipcMain.on("open-screenshot-directory", () => {
+  const screenshotsDir = path.join(app.getPath("userData"), "screenshots");
+  shell.openPath(screenshotsDir);
+});
+
+ipcMain.on("open-output-directory", () => {
+  const outputDir = path.join(app.getPath("userData"), "output");
+  shell.openPath(outputDir);
+});
+
+ipcMain.on("convert-to-pdf", async (event) => {
+  const screenshotsDir = path.join(app.getPath("userData"), "screenshots");
+  const outputDir = path.join(app.getPath("userData"), "output");
+
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const files = fs
+    .readdirSync(screenshotsDir)
+    .filter((file) => file.endsWith(".png"))
+    .map((file) => ({
+      name: file,
+      time: fs.statSync(path.join(screenshotsDir, file)).mtime.getTime(),
+    }))
+    .sort((a, b) => a.time - b.time)
+    .map((file) => file.name);
+
+  if (files.length === 0) {
+    event.reply("conversion-complete", {
+      success: false,
+      error: "No screenshots found.",
+    });
+    return;
+  }
+
+  try {
+    const pdfDoc = await PDFDocument.create();
+
+    for (const file of files) {
+      const imagePath = path.join(screenshotsDir, file);
+      const imageBytes = fs.readFileSync(imagePath);
+      const image = await pdfDoc.embedPng(imageBytes);
+      const page = pdfDoc.addPage([image.width, image.height]);
+      page.drawImage(image, {
+        x: 0,
+        y: 0,
+        width: image.width,
+        height: image.height,
+      });
+    }
+
+    const pdfPath = path.join(outputDir, `booker_${Date.now()}.pdf`);
+    const pdfBytes = await pdfDoc.save();
+    fs.writeFileSync(pdfPath, pdfBytes);
+
+    event.reply("conversion-complete", { success: true, path: pdfPath });
+  } catch (error) {
+    console.error("PDF conversion error:", error);
+    event.reply("conversion-complete", { success: false, error: error.message });
+  }
 });
 
 // In this file you can include the rest of your app's specific main process

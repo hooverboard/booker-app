@@ -49,7 +49,9 @@
     </style>
   </head>
   <body>
-    <div class="hint" id="hint">Drag to select region, then release (ESC to cancel)</div>
+    <div class="hint" id="hint">
+      Drag to select region, then release (ESC to cancel)
+    </div>
     <div class="selection-box" id="selectionBox"></div>
 
     <script>
@@ -70,7 +72,8 @@
         selectionBox.style.top = e.clientY + "px";
         selectionBox.style.width = "0px";
         selectionBox.style.height = "0px";
-        if (hintEl) hintEl.textContent = "Dragging… release to confirm (ESC to cancel)";
+        if (hintEl)
+          hintEl.textContent = "Dragging… release to confirm (ESC to cancel)";
         console.log("mousedown", dragStart);
       });
 
@@ -87,7 +90,8 @@
         selectionBox.style.top = top + "px";
         selectionBox.style.width = width + "px";
         selectionBox.style.height = height + "px";
-        if (hintEl) hintEl.textContent = `Drag ${width}×${height} (ESC to cancel)`;
+        if (hintEl)
+          hintEl.textContent = `Drag ${width}×${height} (ESC to cancel)`;
         console.log("mousemove", { left, top, width, height });
       });
 
