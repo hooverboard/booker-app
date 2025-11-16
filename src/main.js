@@ -9,60 +9,28 @@ import {
 } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
-// Try to load robotjs; fall back to OS-specific keypress if unavailable
-let robot = null;
-try {
-  // eslint-disable-next-line global-require
-  robot = require("robotjs");
-} catch (e) {
-  console.warn(
-    "robotjs not available, will use OS fallback for spacebar:",
-    e?.message || e
-  );
-}
+
 import fs from "node:fs";
 import { nativeImage } from "electron";
 import { execFile } from "node:child_process";
 import { PDFDocument } from "pdf-lib";
 
 function pressSpacebar() {
-  if (robot) {
-    try {
-      robot.keyTap("space");
-      return;
-    } catch (err) {
-      console.warn(
-        "robotjs keyTap failed, using OS fallback:",
-        err?.message || err
-      );
-    }
-  }
-  if (process.platform === "darwin") {
-    // key code 49 = spacebar
-    execFile(
-      "osascript",
-      ["-e", 'tell application "System Events" to key code 49'],
-      (e) => {
-        if (e) console.error("osascript spacebar failed:", e);
-      }
-    );
-  } else if (process.platform === "win32") {
-    const ps =
-      "$wshell = New-Object -ComObject wscript.shell; $wshell.SendKeys(' ')";
-    execFile(
-      "powershell.exe",
-      [
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        ps,
-      ],
-      (e) => {
-        if (e) console.error("PowerShell spacebar failed:", e);
-      }
-    );
+  const logPath = path.join(app.getPath("userData"), "spacebar-log.txt");
+  const timestamp = new Date().toISOString();
+  fs.appendFileSync(logPath, `[${timestamp}] --- pressSpacebar called ---\n`);
+
+  try {
+    fs.appendFileSync(logPath, `[${timestamp}] Attempting to require('robotjs').\n`);
+    const robot = require("robotjs");
+    fs.appendFileSync(logPath, `[${timestamp}] robotjs loaded successfully. Tapping space.\n`);
+    robot.keyTap("space");
+    fs.appendFileSync(logPath, `[${timestamp}] SUCCESS: robotjs.keyTap('space') executed.\n`);
+    console.log("robotjs executed successfully.");
+  } catch (error) {
+    fs.appendFileSync(logPath, `[${timestamp}] FATAL ERROR: ${error.message}\n`);
+    fs.appendFileSync(logPath, `[${timestamp}] STACK: ${error.stack}\n`);
+    console.error("Failed to load or use robotjs:", error);
   }
 }
 
@@ -134,6 +102,38 @@ app.whenReady().then(async () => {
   if (process.platform === "darwin") {
     const status = systemPreferences.getMediaAccessStatus("screen");
     console.log("Screen capture permission status:", status);
+
+    // Check and request Accessibility permissions for spacebar control
+    console.log("Checking Accessibility permissions...");
+    const hasAccessibility =
+      systemPreferences.isTrustedAccessibilityClient(true);
+    console.log("Accessibility permission status:", hasAccessibility);
+
+    const logPath = path.join(app.getPath("userData"), "permissions-log.txt");
+    fs.writeFileSync(
+      logPath,
+      `Screen: ${status}\nAccessibility: ${hasAccessibility}\n`
+    );
+
+    if (!hasAccessibility) {
+      console.log("⚠️  Accessibility permission NOT granted.");
+      console.log("The system should have shown a prompt to grant permission.");
+      console.log(
+        "If not, go to: System Settings → Privacy & Security → Accessibility"
+      );
+      console.log("and manually add this app, then restart it.");
+
+      // Show alert to user
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.executeJavaScript(`
+            alert("⚠️ Accessibility Permission Required\\n\\nThis app needs Accessibility permission to press spacebar.\\n\\nPlease:\\n1. Go to System Settings → Privacy & Security → Accessibility\\n2. Add Booker.app to the list\\n3. Restart the app\\n\\nLog file: ${logPath}");
+          `);
+        }
+      }, 1000);
+    } else {
+      console.log("✓ Accessibility permission granted.");
+    }
   }
 
   createWindow();
@@ -395,8 +395,8 @@ ipcMain.on("start-capture", async (event, numScreenshots) => {
       // press spacebar
       pressSpacebar();
 
-      // wait 500ms before next capture
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // wait 2s before next capture
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (error) {
       console.error("Screenshot error:", error);
     }
@@ -515,8 +515,8 @@ ipcMain.on("start-capture-region", async (event, numScreenshots, region) => {
       // press spacebar
       pressSpacebar();
 
-      // wait 500ms before next capture
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // wait 2s before next capture
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (error) {
       console.error("Screenshot error:", error);
     }
@@ -589,7 +589,10 @@ ipcMain.on("convert-to-pdf", async (event) => {
     event.reply("conversion-complete", { success: true, path: pdfPath });
   } catch (error) {
     console.error("PDF conversion error:", error);
-    event.reply("conversion-complete", { success: false, error: error.message });
+    event.reply("conversion-complete", {
+      success: false,
+      error: error.message,
+    });
   }
 });
 
