@@ -4,6 +4,7 @@ import "./Home.css";
 
 const Home = () => {
   const [screenshotNum, setScreenshotNum] = useState("5");
+  const [interval, setInterval] = useState("2");
   const [isCapturing, setIsCapturing] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -19,7 +20,8 @@ const Home = () => {
       if (region) {
         setIsCapturing(true);
         const num = parseInt(screenshotNum);
-        window.electronAPI.startCaptureWithRegion(num, region);
+        const intervalSeconds = parseFloat(interval);
+        window.electronAPI.startCaptureWithRegion(num, region, intervalSeconds);
       }
     };
 
@@ -52,7 +54,12 @@ const Home = () => {
   const handleStart = () => {
     const num = parseInt(screenshotNum);
     if (isNaN(num) || num < 1) {
-      alert("Must enter a valid number");
+      alert("Must enter a valid number of screenshots");
+      return;
+    }
+    const intervalSeconds = parseFloat(interval);
+    if (isNaN(intervalSeconds) || intervalSeconds < 0.5) {
+      alert("Interval must be at least 0.5 seconds");
       return;
     }
     window.electronAPI.openRegionSelector?.();
@@ -104,6 +111,19 @@ const Home = () => {
       <button onClick={handleStart} disabled={isCapturing}>
         {isCapturing ? "Capturing..." : "Start"}
       </button>
+
+      <div className="interval-input-container">
+        <label>Interval (seconds)</label>
+        <input
+          type="number"
+          className="interval-input"
+          value={interval}
+          onChange={(e) => setInterval(e.target.value)}
+          disabled={isCapturing}
+          min="0.5"
+          step="0.1"
+        />
+      </div>
     </div>
   );
 };

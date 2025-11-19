@@ -11,26 +11,45 @@ import path from "node:path";
 import started from "electron-squirrel-startup";
 
 import fs from "node:fs";
+import { promises as fsPromises } from "node:fs";
 import { nativeImage } from "electron";
-import { execFile } from "node:child_process";
 import { PDFDocument } from "pdf-lib";
+import { execSync, spawn } from "node:child_process";
 
 function pressSpacebar() {
   const logPath = path.join(app.getPath("userData"), "spacebar-log.txt");
   const timestamp = new Date().toISOString();
-  fs.appendFileSync(logPath, `[${timestamp}] --- pressSpacebar called ---\n`);
+
+  // Append to log file
+  fs.appendFileSync(logPath, `[${timestamp}] --- Spacebar press attempt ---\n`);
 
   try {
-    fs.appendFileSync(logPath, `[${timestamp}] Attempting to require('robotjs').\n`);
-    const robot = require("robotjs");
-    fs.appendFileSync(logPath, `[${timestamp}] robotjs loaded successfully. Tapping space.\n`);
-    robot.keyTap("space");
-    fs.appendFileSync(logPath, `[${timestamp}] SUCCESS: robotjs.keyTap('space') executed.\n`);
-    console.log("robotjs executed successfully.");
+    if (process.platform === "darwin") {
+      // Use Python pyautogui - reliable and works with Accessibility permissions
+      const pythonScript = "import pyautogui; pyautogui.press('space')";
+
+      fs.appendFileSync(logPath, `[${timestamp}] Using Python pyautogui\n`);
+
+      // Use execSync for immediate execution with full Python path
+      execSync(`/opt/homebrew/bin/python3 -c "${pythonScript}"`, {
+        encoding: "utf-8",
+      });
+
+      fs.appendFileSync(logPath, `[${timestamp}] SUCCESS - spacebar pressed\n`);
+      console.log("Spacebar pressed successfully via Python");
+    } else if (process.platform === "win32") {
+      // Windows fallback
+      const ps =
+        "$wshell = New-Object -ComObject wscript.shell; $wshell.SendKeys(' ')";
+      execSync(
+        `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "${ps}"`,
+        { encoding: "utf-8" }
+      );
+      fs.appendFileSync(logPath, `[${timestamp}] SUCCESS - Windows spacebar\n`);
+    }
   } catch (error) {
-    fs.appendFileSync(logPath, `[${timestamp}] FATAL ERROR: ${error.message}\n`);
-    fs.appendFileSync(logPath, `[${timestamp}] STACK: ${error.stack}\n`);
-    console.error("Failed to load or use robotjs:", error);
+    fs.appendFileSync(logPath, `[${timestamp}] ERROR: ${error.message}\n`);
+    console.error("Spacebar press failed:", error.message);
   }
 }
 
@@ -447,88 +466,166 @@ ipcMain.on("capture-loop-complete", (event, meta) => {
 // (Removed duplicate handler; defined earlier in file)
 
 // listen for screenshot capture requests with region
-ipcMain.on("start-capture-region", async (event, numScreenshots, region) => {
-  console.log(
-    `Starting capture of ${numScreenshots} screenshots with region:`,
-    region
-  );
+ipcMain.on(
+  "start-capture-region",
+  async (event, numScreenshots, region, interval) => {
+    console.log(
+      `Starting capture of ${numScreenshots} screenshots with region:`,
+      region
+    );
+    console.log(`Interval: ${interval} seconds`);
 
-  // wait 3 seconds for user to prepare/switch windows
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+    // Default to 2 seconds if interval is invalid
+    const delayMs = interval && interval >= 0.5 ? interval * 1000 : 2000;
 
-  // create screenshots folder in the app directory
-  const screenshotsDir = path.join(app.getPath("userData"), "screenshots");
-  if (!fs.existsSync(screenshotsDir)) {
-    fs.mkdirSync(screenshotsDir, { recursive: true });
-  }
+    // wait 3 seconds for user to prepare/switch windows
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-  // loop through and capture each screenshot
-  for (let i = 0; i < numScreenshots; i++) {
-    try {
-      // Get primary display size
-      const primaryDisplay = electronScreen.getPrimaryDisplay();
-      const { width, height } = primaryDisplay.size;
-      const scaleFactor = primaryDisplay.scaleFactor;
-
-      // Capture the full screen using desktopCapturer
-      const sources = await desktopCapturer.getSources({
-        types: ["screen"],
-        thumbnailSize: {
-          width: Math.floor(width * scaleFactor),
-          height: Math.floor(height * scaleFactor),
-        },
-        fetchWindowIcons: false,
-      });
-
-      console.log(`Found ${sources.length} screen sources`);
-
-      if (sources.length === 0) {
-        throw new Error(
-          "No screen sources found. Please grant screen recording permission."
-        );
-      }
-
-      // Get the first screen (primary display)
-      const source = sources[0];
-      const thumbnail = source.thumbnail;
-
-      // Crop the thumbnail to the selected region
-      const croppedImage = thumbnail.crop({
-        x: Math.floor(region.x * scaleFactor),
-        y: Math.floor(region.y * scaleFactor),
-        width: Math.floor(region.width * scaleFactor),
-        height: Math.floor(region.height * scaleFactor),
-      });
-
-      // Convert to PNG buffer
-      const imageBuffer = croppedImage.toPNG();
-
-      // generate filename with timestamp
-      const timestamp = Date.now();
-      const filename = `screenshot_${i + 1}_${timestamp}.png`;
-      const filepath = path.join(screenshotsDir, filename);
-
-      // save the screenshot
-      fs.writeFileSync(filepath, imageBuffer);
-      console.log(`Saved: ${filename}`);
-
-      // press spacebar
-      pressSpacebar();
-
-      // wait 2s before next capture
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    } catch (error) {
-      console.error("Screenshot error:", error);
+    // create screenshots folder in the app directory
+    const screenshotsDir = path.join(app.getPath("userData"), "screenshots");
+    if (!fs.existsSync(screenshotsDir)) {
+      fs.mkdirSync(screenshotsDir, { recursive: true });
     }
-  }
 
-  // send completion message back to React
-  event.reply("capture-complete", {
-    success: true,
-    count: numScreenshots,
-    folder: screenshotsDir,
-  });
-});
+    // Start persistent Python process for faster key presses
+    let pythonProcess = null;
+    if (process.platform === "darwin") {
+      try {
+        const pythonScript = `
+import sys
+import pyautogui
+print("READY")
+sys.stdout.flush()
+for line in sys.stdin:
+    if "space" in line:
+        pyautogui.press("space")
+        print("DONE")
+        sys.stdout.flush()
+`;
+        console.log("Spawning persistent Python process...");
+        pythonProcess = spawn("/opt/homebrew/bin/python3", [
+          "-c",
+          pythonScript,
+        ]);
+
+        // Wait for READY signal
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(
+            () => reject(new Error("Python spawn timeout")),
+            5000
+          );
+          const listener = (data) => {
+            if (data.toString().includes("READY")) {
+              clearTimeout(timeout);
+              pythonProcess.stdout.off("data", listener);
+              resolve();
+            }
+          };
+          pythonProcess.stdout.on("data", listener);
+          pythonProcess.stderr.on("data", (data) =>
+            console.error("Python stderr:", data.toString())
+          );
+        });
+        console.log("Python process ready.");
+      } catch (e) {
+        console.error("Failed to spawn Python process:", e);
+        pythonProcess = null; // Fallback to execSync
+      }
+    }
+
+    // loop through and capture each screenshot
+    for (let i = 0; i < numScreenshots; i++) {
+      try {
+        const loopStart = Date.now();
+
+        // Get primary display size
+        const primaryDisplay = electronScreen.getPrimaryDisplay();
+        const { width, height } = primaryDisplay.size;
+        const scaleFactor = primaryDisplay.scaleFactor;
+
+        // Capture the full screen using desktopCapturer
+        const sources = await desktopCapturer.getSources({
+          types: ["screen"],
+          thumbnailSize: {
+            width: Math.floor(width * scaleFactor),
+            height: Math.floor(height * scaleFactor),
+          },
+          fetchWindowIcons: false,
+        });
+
+        console.log(`Found ${sources.length} screen sources`);
+
+        if (sources.length === 0) {
+          throw new Error(
+            "No screen sources found. Please grant screen recording permission."
+          );
+        }
+
+        // Get the first screen (primary display)
+        const source = sources[0];
+        const thumbnail = source.thumbnail;
+
+        // Trigger spacebar immediately after capture
+        if (pythonProcess) {
+          pythonProcess.stdin.write("space\n");
+          // We don't await the "DONE" signal here to avoid blocking
+          // But we should consume the output to prevent buffer overflow
+          pythonProcess.stdout.once("data", () => {}); 
+        } else {
+          pressSpacebar();
+        }
+
+        // Calculate wait time based on capture time only
+        const captureTime = Date.now() - loopStart;
+        const waitTime = Math.max(0, delayMs - captureTime);
+        console.log(`Capture took ${captureTime}ms. Waiting ${waitTime}ms.`);
+
+        // Start the wait timer concurrently with image processing
+        const waitPromise = new Promise((resolve) => setTimeout(resolve, waitTime));
+
+        // Process and save image in parallel
+        const savePromise = (async () => {
+          // Crop the thumbnail to the selected region
+          const croppedImage = thumbnail.crop({
+            x: Math.floor(region.x * scaleFactor),
+            y: Math.floor(region.y * scaleFactor),
+            width: Math.floor(region.width * scaleFactor),
+            height: Math.floor(region.height * scaleFactor),
+          });
+
+          // Convert to PNG buffer (this is synchronous and might block, but we try)
+          const imageBuffer = croppedImage.toPNG();
+
+          // generate filename with timestamp
+          const timestamp = Date.now();
+          const filename = `screenshot_${i + 1}_${timestamp}.png`;
+          const filepath = path.join(screenshotsDir, filename);
+
+          // save the screenshot asynchronously
+          await fsPromises.writeFile(filepath, imageBuffer);
+          console.log(`Saved: ${filename}`);
+        })();
+
+        // Wait for both the interval timer AND the save operation
+        await Promise.all([waitPromise, savePromise]);
+
+      } catch (error) {
+        console.error("Screenshot error:", error);
+      }
+    }
+
+    if (pythonProcess) {
+      pythonProcess.kill();
+    }
+
+    // send completion message back to React
+    event.reply("capture-complete", {
+      success: true,
+      count: numScreenshots,
+      folder: screenshotsDir,
+    });
+  }
+);
 
 ipcMain.on("open-screenshot-directory", () => {
   const screenshotsDir = path.join(app.getPath("userData"), "screenshots");

@@ -3,10 +3,7 @@ const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 
 module.exports = {
   packagerConfig: {
-    asar: {
-      // Unpack the entire robotjs module so its native .node can be loaded
-      unpackDir: "node_modules/robotjs",
-    },
+    asar: false,
   },
   rebuildConfig: {
     force: true,
@@ -30,11 +27,7 @@ module.exports = {
     },
   ],
   plugins: [
-    {
-      name: "@electron-forge/plugin-auto-unpack-natives",
-      config: {},
-    },
-    {
+{
       name: "@electron-forge/plugin-vite",
       config: {
         // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
