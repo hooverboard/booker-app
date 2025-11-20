@@ -61,23 +61,23 @@ button {
   cursor: pointer;
   border: none;
   border-radius: 12px;
-  background: #00c853;
+  background: #2196f3;
   color: #fff;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(0, 200, 83, 0.4);
+  box-shadow: 0 4px 14px rgba(33, 150, 243, 0.4);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 button:hover:not(:disabled) {
-  background: #00e676;
-  box-shadow: 0 6px 20px rgba(0, 200, 83, 0.5);
+  background: #42a5f5;
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.5);
   transform: translateY(-2px);
 }
 
 button:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(0, 200, 83, 0.4);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
 }
 
 button:disabled {

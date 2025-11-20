@@ -16,6 +16,21 @@ import { nativeImage } from "electron";
 import { PDFDocument } from "pdf-lib";
 import { execSync, spawn } from "node:child_process";
 
+// Get path to bundled Python
+function getPythonPath() {
+  if (app.isPackaged) {
+    // In production, use bundled Python from resources
+    const resourcesPath = process.resourcesPath;
+    if (process.platform === "darwin") {
+      return path.join(resourcesPath, "python", "bin", "python3");
+    } else if (process.platform === "win32") {
+      return path.join(resourcesPath, "python", "python.exe");
+    }
+  }
+  // In development, use system Python
+  return process.platform === "darwin" ? "/opt/homebrew/bin/python3" : "python3";
+}
+
 function pressSpacebar() {
   const logPath = path.join(app.getPath("userData"), "spacebar-log.txt");
   const timestamp = new Date().toISOString();
@@ -30,8 +45,9 @@ function pressSpacebar() {
 
       fs.appendFileSync(logPath, `[${timestamp}] Using Python pyautogui\n`);
 
-      // Use execSync for immediate execution with full Python path
-      execSync(`/opt/homebrew/bin/python3 -c "${pythonScript}"`, {
+      // Use execSync for immediate execution with bundled Python
+      const pythonPath = getPythonPath();
+      execSync(`"${pythonPath}" -c "${pythonScript}"`, {
         encoding: "utf-8",
       });
 
@@ -110,7 +126,7 @@ const createWindow = () => {
   }
 
   // open the devtools on launch
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
@@ -511,7 +527,8 @@ for line in sys.stdin:
     sys.stdout.flush()
 `;
         console.log("Spawning persistent Python process...");
-        pythonProcess = spawn("/opt/homebrew/bin/python3", [
+        const pythonPath = getPythonPath();
+        pythonProcess = spawn(pythonPath, [
           "-c",
           pythonScript,
         ]);

@@ -4,6 +4,10 @@ const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 module.exports = {
   packagerConfig: {
     asar: false,
+    icon: "./build/icon",
+    extraResource: [
+      "./resources/python"
+    ],
   },
   rebuildConfig: {
     force: true,
@@ -11,19 +15,26 @@ module.exports = {
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
-      config: {},
+      config: {
+        name: "booker",
+        authors: "Booker App",
+        description: "Screenshot automation tool"
+      },
+      platforms: ["win32"],
     },
     {
       name: "@electron-forge/maker-zip",
-      platforms: ["darwin"],
+      platforms: ["darwin", "win32"],
     },
     {
       name: "@electron-forge/maker-deb",
       config: {},
+      platforms: ["linux"],
     },
     {
       name: "@electron-forge/maker-rpm",
       config: {},
+      platforms: ["linux"],
     },
   ],
   plugins: [
