@@ -7,8 +7,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.send("start-capture", numScreenshots);
   },
   // new: capture with region coordinates
-  startCaptureWithRegion: (numScreenshots, region, interval) => {
-    ipcRenderer.send("start-capture-region", numScreenshots, region, interval);
+  startCaptureWithRegion: (numScreenshots, region, interval, key) => {
+    ipcRenderer.send(
+      "start-capture-region",
+      numScreenshots,
+      region,
+      interval,
+      key
+    );
   },
   // open fullscreen region selector
   openRegionSelector: () => {

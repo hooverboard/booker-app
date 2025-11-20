@@ -5,6 +5,7 @@ import "./Home.css";
 const Home = () => {
   const [screenshotNum, setScreenshotNum] = useState("5");
   const [interval, setInterval] = useState("2");
+  const [selectedKey, setSelectedKey] = useState("space");
   const [isCapturing, setIsCapturing] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -21,7 +22,12 @@ const Home = () => {
         setIsCapturing(true);
         const num = parseInt(screenshotNum);
         const intervalSeconds = parseFloat(interval);
-        window.electronAPI.startCaptureWithRegion(num, region, intervalSeconds);
+        window.electronAPI.startCaptureWithRegion(
+          num,
+          region,
+          intervalSeconds,
+          selectedKey
+        );
       }
     };
 
@@ -123,6 +129,17 @@ const Home = () => {
           min="0.5"
           step="0.1"
         />
+        <label style={{ marginTop: "1rem" }}>Key to Press</label>
+        <select
+          className="key-select"
+          value={selectedKey}
+          onChange={(e) => setSelectedKey(e.target.value)}
+          disabled={isCapturing}
+        >
+          <option value="space">Spacebar</option>
+          <option value="right">Right Arrow</option>
+          <option value="down">Down Arrow</option>
+        </select>
       </div>
     </div>
   );

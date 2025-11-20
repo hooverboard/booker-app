@@ -468,15 +468,18 @@ ipcMain.on("capture-loop-complete", (event, meta) => {
 // listen for screenshot capture requests with region
 ipcMain.on(
   "start-capture-region",
-  async (event, numScreenshots, region, interval) => {
+  async (event, numScreenshots, region, interval, key) => {
     console.log(
       `Starting capture of ${numScreenshots} screenshots with region:`,
       region
     );
     console.log(`Interval: ${interval} seconds`);
+    console.log(`Key to press: ${key || "space"}`);
 
     // Default to 2 seconds if interval is invalid
     const delayMs = interval && interval >= 0.5 ? interval * 1000 : 2000;
+    // Default to space if key is invalid
+    const keyToPress = key || "space";
 
     // wait 3 seconds for user to prepare/switch windows
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -497,10 +500,15 @@ import pyautogui
 print("READY")
 sys.stdout.flush()
 for line in sys.stdin:
-    if "space" in line:
+    line = line.strip()
+    if line == "space":
         pyautogui.press("space")
-        print("DONE")
-        sys.stdout.flush()
+    elif line == "right":
+        pyautogui.press("right")
+    elif line == "down":
+        pyautogui.press("down")
+    print("DONE")
+    sys.stdout.flush()
 `;
         console.log("Spawning persistent Python process...");
         pythonProcess = spawn("/opt/homebrew/bin/python3", [
@@ -565,12 +573,12 @@ for line in sys.stdin:
         const source = sources[0];
         const thumbnail = source.thumbnail;
 
-        // Trigger spacebar immediately after capture
+        // Trigger key press immediately after capture
         if (pythonProcess) {
-          pythonProcess.stdin.write("space\n");
+          pythonProcess.stdin.write(keyToPress + "\n");
           // We don't await the "DONE" signal here to avoid blocking
           // But we should consume the output to prevent buffer overflow
-          pythonProcess.stdout.once("data", () => {}); 
+          pythonProcess.stdout.once("data", () => {});
         } else {
           pressSpacebar();
         }
@@ -581,7 +589,9 @@ for line in sys.stdin:
         console.log(`Capture took ${captureTime}ms. Waiting ${waitTime}ms.`);
 
         // Start the wait timer concurrently with image processing
-        const waitPromise = new Promise((resolve) => setTimeout(resolve, waitTime));
+        const waitPromise = new Promise((resolve) =>
+          setTimeout(resolve, waitTime)
+        );
 
         // Process and save image in parallel
         const savePromise = (async () => {
@@ -608,7 +618,6 @@ for line in sys.stdin:
 
         // Wait for both the interval timer AND the save operation
         await Promise.all([waitPromise, savePromise]);
-
       } catch (error) {
         console.error("Screenshot error:", error);
       }

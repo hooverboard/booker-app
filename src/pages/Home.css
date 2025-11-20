@@ -216,3 +216,40 @@ button:disabled {
 .dark-mode .interval-input:focus {
   background: rgba(255, 255, 255, 0.3);
 }
+
+.key-select {
+  width: 100px !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  margin-bottom: 0 !important;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.key-select:focus {
+  outline: none;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.key-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dark-mode .key-select {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.dark-mode .key-select:focus {
+  background: rgba(255, 255, 255, 0.3);
+}
